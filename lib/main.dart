@@ -15,6 +15,9 @@ final channel = ClientChannel(
 
 final api = ApiHandlerClient(channel);
 
+$fixnum.Int64 cid = $fixnum.Int64(0);
+$fixnum.Int64? gid = $fixnum.Int64(0);
+
 void main() {
   runApp(MyApp());
 }
@@ -37,13 +40,10 @@ class _StudentLabTableState extends State<StudentLabTable> {
   Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> labRes =
   Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>>();
 
-  List<GroupUserListResponse_Student>? studentsNames;
+  List<GroupUserListResponse_Student> studentsNames = [];
   int studentsLen = 0;
 
   void updateStudents(List<GroupUserListResponse_Student> newData) {
-    studentsLen = newData.length;
-    studentsNames = newData;
-
     for (var i = 0; i < newData.length; i++) {
       api.getLabByUser(LabByUserRequest(userId: newData[i].userId))
           .then((p0) => (){
@@ -59,14 +59,22 @@ class _StudentLabTableState extends State<StudentLabTable> {
             }
       });
     }
+
+    Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> _labRes = labRes;
+    List<LabInfo> _labNames = labNames;
+    int _labsLen = labsLen;
+
+    setState(() { studentsNames = newData; studentsLen = newData.length; labRes = _labRes; labNames = _labNames; labsLen = _labsLen; });
   }
 
-  List<LabInfo>? labNames;
+  List<LabInfo> labNames = [];
   int labsLen = 0;
 
   void updateLabInfo(List<LabInfo> newData) {
-    labsLen = newData.length;
-    labNames = newData;
+    Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> _labRes = labRes;
+    List<GroupUserListResponse_Student> _studentsNames = studentsNames;
+    int _studentsLen = studentsLen;
+    setState(() { labNames = newData; labsLen = newData.length; labRes = _labRes; studentsNames = _studentsNames; studentsLen = _studentsLen; });
   }
 
   String lName(int index) {
@@ -93,147 +101,38 @@ class _StudentLabTableState extends State<StudentLabTable> {
     return "";
   }
 
+  Text tlabNames(int index) {
+    if (index == 0)
+      return Text("Студент");
+    return Text(lName(index - 1));
+  }
+
+  Text trowCell(int i, int j) {
+    if (j == 0)
+      return Text(sName(i));
+    return Text(lRes(studentsNames[i].userId, labNames[j].labId));
+  }
+
   @override
   Widget build(BuildContext context) {
+    api.getGroupUserList(GroupUserListRequest(groupId: gid)).then((p0) => updateStudents(p0.students));
+    api.getLabsList(LabsListRequest(courceId: cid)).then((p0) => updateLabInfo(p0.labs));
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Таблица с горизонтальной прокруткой'),
+          title: Text(''),
         ),
         body: SingleChildScrollView(
           scrollDirection: Axis.vertical,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal, // Горизонтальная прокрутка
             child: DataTable(
-              columns: <DataColumn>[
-                DataColumn(label: Text('Столбец 1')),
-                DataColumn(label: Text('Столбец 2')),
-                DataColumn(label: Text('Столбец 3')),
-                // Добавьте дополнительные столбцы по мере необходимости
-              ],
-              rows: <DataRow>[
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                DataRow(cells: <DataCell>[
-                  DataCell(Text('Ячейка 1.1')),
-                  DataCell(Text('Ячейка 1.2')),
-                  DataCell(Text('Ячейка 1.3')),
-                  // Добавьте дополнительные ячейки по мере необходимости
-                ]),
-                // Добавьте дополнительные строки по мере необходимости
-              ],
+              columns: List<DataColumn>.generate(labsLen + 1, (index) =>
+                  DataColumn(label: tlabNames(index))),
+              rows: List<DataRow>.generate(studentsLen, (i) =>
+                  DataRow(cells: List<DataCell>.generate(labsLen + 1, (j) =>
+                      DataCell(trowCell(i, j))))
+              ),
             ),
           ),
         ),
@@ -264,6 +163,7 @@ class _GroupListState extends State<GroupList> {
 
   @override
   Widget build(BuildContext context) {
+    api.getGroupList(GroupListRequest(courseId: cid)).then((p0) => updateData(p0.group));
     return Scaffold(
       appBar: AppBar(
         title: Text('Список групп'),
@@ -275,13 +175,8 @@ class _GroupListState extends State<GroupList> {
             title: Text(gName(index)),
             onTap: () {
               if (groupNames != null) {
-                $fixnum.Int64? gid = groupNames![index].groupId;
+                gid = groupNames![index].groupId;
                 // При нажатии на элемент списка
-                StudentLabTable slt = StudentLabTable();
-                _StudentLabTableState state = slt.createState();
-                api.getGroupUserList(GroupUserListRequest(groupId: gid)).then((p0) => () {
-                  state.updateStudents(p0.students);
-                });
 
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -331,15 +226,14 @@ class _CourseListState extends State<CourseList> {
             title: Text(cName(index)),
             onTap: () {
               if (courseNames != null) {
-                $fixnum.Int64? cid = courseNames![index].courseId;
+                cid = courseNames![index].courseId;
                 // При нажатии на элемент списка
-                GroupList g = GroupList();
-                api.getGroupList(GroupListRequest(courseId: cid)).then((p0) => g.createState().updateData(p0.group));
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => g,
+                    builder: (context) => GroupList(),
                   ),
                 );
+
 
               }
             },
