@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:grpc/grpc.dart';
 import 'package:flutter/material.dart';
 import 'package:grpc/grpc_or_grpcweb.dart';
@@ -43,38 +45,51 @@ class _StudentLabTableState extends State<StudentLabTable> {
   List<GroupUserListResponse_Student> studentsNames = [];
   int studentsLen = 0;
 
-  void updateStudents(List<GroupUserListResponse_Student> newData) {
-    for (var i = 0; i < newData.length; i++) {
-      api.getLabByUser(LabByUserRequest(userId: newData[i].userId))
-          .then((p0) => (){
-            for (var i = 0; i < p0.userLab.length; i++) {
-              if (labRes[newData[i].userId] != null) {
-                labRes[newData[i].userId] =
-                    Map<$fixnum.Int64, LabByUserResponse_UserLab>();
-              }
-              if (newData[i] != null) {
-                labRes[newData[i].userId]![p0.userLab[i].labId] =
-                p0.userLab[i];
-              }
-            }
-      });
-    }
-
-    Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> _labRes = labRes;
-    List<LabInfo> _labNames = labNames;
-    int _labsLen = labsLen;
-
-    setState(() { studentsNames = newData; studentsLen = newData.length; labRes = _labRes; labNames = _labNames; labsLen = _labsLen; });
-  }
-
   List<LabInfo> labNames = [];
   int labsLen = 0;
 
+  void updateLabRes(int index, List<GroupUserListResponse_Student> studData, List<LabInfo> labInfo,
+      Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> resData, LabByUserResponse p0) {
+    log("index " + index.toString());
+    for (var j = 0; j < p0.userLab.length; j++) {
+      if (resData[studData[index].userId] == null) {
+        resData[studData[index].userId] =
+            Map<$fixnum.Int64, LabByUserResponse_UserLab>();
+      }
+      if (studData[index] != null) {
+        resData[studData[index].userId]![p0.userLab[j].labId] =
+        p0.userLab[j];
+      }
+    }
+    if (index + 1 < studData.length) {
+      api.getLabByUser(LabByUserRequest(userId: studData[index + 1].userId))
+          .then((p1) => updateLabRes(index + 1, studData, labInfo, resData, p1));
+    }
+    else {
+        setState(() { labRes = resData; studentsNames = studData;
+          studentsLen = studData.length; labNames = labInfo;
+        labsLen = labInfo.length; });
+    }
+  }
+
+  void updateStudents(List<GroupUserListResponse_Student> newData, List<LabInfo> labInfo) {
+    Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> resData =
+    Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>>();
+    log("students " + newData.length.toString());
+    log("labs " + labInfo.length.toString());
+    if (newData.isNotEmpty) {
+      api.getLabByUser(LabByUserRequest(userId: newData[0].userId))
+          .then((p0) => updateLabRes(0, newData, labInfo, resData, p0));
+    }
+    else {
+      setState(() { labRes = resData; studentsNames = newData;
+      studentsLen = newData.length; labNames = labInfo;
+      labsLen = labInfo.length; });
+    }
+  }
+
   void updateLabInfo(List<LabInfo> newData) {
-    Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> _labRes = labRes;
-    List<GroupUserListResponse_Student> _studentsNames = studentsNames;
-    int _studentsLen = studentsLen;
-    setState(() { labNames = newData; labsLen = newData.length; labRes = _labRes; studentsNames = _studentsNames; studentsLen = _studentsLen; });
+    api.getGroupUserList(GroupUserListRequest(groupId: gid)).then((p0) => updateStudents(p0.students, newData));
   }
 
   String lName(int index) {
@@ -94,9 +109,10 @@ class _StudentLabTableState extends State<StudentLabTable> {
 
   String lRes($fixnum.Int64 studentId, $fixnum.Int64 labId) {
     if (labRes[studentId] != null && labRes[studentId]![labId] != null) {
-        return labRes[studentId]![labId]!.mark.toString() + " "
-            + labRes[studentId]![labId]!.onRevision.toString() + " "
-            + labRes[studentId]![labId]!.sendDate.toString();
+        return "Баллы: " + labRes[studentId]![labId]!.mark.toString() + "\n"
+            "Проверено: "+ labRes[studentId]![labId]!.onRevision.toString() + "\n"
+            "Время отправки: "+
+            DateTime.fromMillisecondsSinceEpoch(labRes[studentId]![labId]!.sendDate.seconds.toInt() * 1000).toString();
     }
     return "";
   }
@@ -110,12 +126,11 @@ class _StudentLabTableState extends State<StudentLabTable> {
   Text trowCell(int i, int j) {
     if (j == 0)
       return Text(sName(i));
-    return Text(lRes(studentsNames[i].userId, labNames[j].labId));
+    return Text(lRes(studentsNames[i].userId, labNames[j - 1].labId));
   }
 
   @override
   Widget build(BuildContext context) {
-    api.getGroupUserList(GroupUserListRequest(groupId: gid)).then((p0) => updateStudents(p0.students));
     api.getLabsList(LabsListRequest(courceId: cid)).then((p0) => updateLabInfo(p0.labs));
     return MaterialApp(
       home: Scaffold(
@@ -214,6 +229,7 @@ class _CourseListState extends State<CourseList> {
 
   @override
   Widget build(BuildContext context) {
+
     api.getCourseList(CourseListRequest()).then((p0) => updateData(p0.cources));
     return Scaffold(
       appBar: AppBar(
