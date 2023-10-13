@@ -130,10 +130,15 @@ class _StudentLabTableState extends State<StudentLabTable> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+
     api.getLabsList(LabsListRequest(courceId: cid)).then((p0) => updateLabInfo(p0.labs));
-    return MaterialApp(
-      home: Scaffold(
+  }
+
+  @override
+  Widget build(BuildContext context) {
+      return Scaffold(
         appBar: AppBar(
           title: Text(''),
         ),
@@ -151,7 +156,6 @@ class _StudentLabTableState extends State<StudentLabTable> {
             ),
           ),
         ),
-      ),
     );
   }
 }
