@@ -7,6 +7,11 @@ import 'package:untitled2/service.pbgrpc.dart';
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import './service.pb.dart';
 
+// Android Studio hotkeys:
+// CTRL + SPACE   : to get fields
+// ALT + ENTER    : to wrap
+// CTRL + ALT + L : formatter
+
 final channel = ClientChannel(
   '64.226.73.174',
   port: 50000,
@@ -29,6 +34,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: CourseList(),
+      theme: ThemeData(
+        // useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+      ),
     );
   }
 }
@@ -77,6 +86,7 @@ class _StudentLabTableState extends State<StudentLabTable> {
     Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>>();
     log("students " + newData.length.toString());
     log("labs " + labInfo.length.toString());
+    newData.sort((a, b) => a.lastName.compareTo(b.lastName));
     if (newData.isNotEmpty) {
       api.getLabByUser(LabByUserRequest(userId: newData[0].userId))
           .then((p0) => updateLabRes(0, newData, labInfo, resData, p0));
@@ -101,20 +111,23 @@ class _StudentLabTableState extends State<StudentLabTable> {
 
   String sName(int index) {
     if (studentsNames != null)
-      return studentsNames![index].lastName + " " +
-          studentsNames![index].firstName + " " + studentsNames![index].patronymic;
+      return studentsNames![index].lastName + " " + studentsNames![index].firstName;
     else
       return "";
   }
 
-  String lRes($fixnum.Int64 studentId, $fixnum.Int64 labId) {
+  Text getDesc(int i, int j) {
+    var studentId = studentsNames[i].userId;
+    var labId = labNames[j - 1].labId;
     if (labRes[studentId] != null && labRes[studentId]![labId] != null) {
-        return "Баллы: " + labRes[studentId]![labId]!.mark.toString() + "\n"
-            "Проверено: "+ labRes[studentId]![labId]!.onRevision.toString() + "\n"
+        return Text(
+            studentsNames[i].lastName + " " + studentsNames[i].firstName + "\n" +
+            "Баллы: " + labRes[studentId]![labId]!.mark.toString() + "\n" +
+            "OnRevision: "+ labRes[studentId]![labId]!.onRevision.toString() + "\n" +
             "Время отправки: "+
-            DateTime.fromMillisecondsSinceEpoch(labRes[studentId]![labId]!.sendDate.seconds.toInt() * 1000).toString();
+            DateTime.fromMillisecondsSinceEpoch(labRes[studentId]![labId]!.sendDate.seconds.toInt() * 1000).toString());
     }
-    return "";
+    return Text("");
   }
 
   Text tlabNames(int index) {
@@ -122,12 +135,29 @@ class _StudentLabTableState extends State<StudentLabTable> {
       return Text("Студент");
     return Text(lName(index - 1));
   }
-
-  Text trowCell(int i, int j) {
-    if (j == 0)
-      return Text(sName(i));
-    return Text(lRes(studentsNames[i].userId, labNames[j - 1].labId));
+  Text getMark(int i, int j) {
+    var studentId = studentsNames[i].userId;
+    var labId = labNames[j - 1].labId;
+    if (labRes[studentId] != null && labRes[studentId]![labId] != null) {
+      return Text(labRes[studentId]![labId]!.mark.toString());
+    }
+    return Text("");
   }
+  bool isOnRevision(int i, int j) {
+    var studentId = studentsNames[i].userId;
+    var labId = labNames[j - 1].labId;
+    if (labRes[studentId] != null && labRes[studentId]![labId] != null) {
+      var onRev = labRes[studentId]![labId]!.onRevision;
+      return onRev;
+    }
+    return false;
+  }
+
+  // Text trowCell(int i, int j) {
+  //   if (j == 0)
+  //     return Text(sName(i));
+  //   return Text(lRes(studentsNames[i].userId, labNames[j - 1].labId));
+  // }
 
   @override
   void initState() {
@@ -147,15 +177,57 @@ class _StudentLabTableState extends State<StudentLabTable> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal, // Горизонтальная прокрутка
             child: DataTable(
+              columnSpacing: 0.0,
               columns: List<DataColumn>.generate(labsLen + 1, (index) =>
-                  DataColumn(label: tlabNames(index))),
+                  DataColumn(
+
+                    label: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0), // Добавление полей слева и справа
+                      child: tlabNames(index),
+                    ),
+                  ),
+              ),
+              border: TableBorder(
+                horizontalInside: BorderSide(),
+                verticalInside: BorderSide(),
+              ),
               rows: List<DataRow>.generate(studentsLen, (i) =>
-                  DataRow(cells: List<DataCell>.generate(labsLen + 1, (j) =>
-                      DataCell(trowCell(i, j))))
+                  DataRow(cells: List<DataCell>.generate(labsLen + 1, (j) {
+                      return j == 0 ? DataCell(Text(sName(i))) : MarkCell(i, j);}
+                      ))
               ),
             ),
           ),
         ),
+    );
+  }
+
+  DataCell MarkCell(int i, int j) {
+    return DataCell(
+      SizedBox.expand(
+          child: Container(
+              alignment: Alignment.center,
+              color: isOnRevision(i, j) ? Colors.yellowAccent : (getMark(i, j).data!="" ? Colors.greenAccent : null),
+              child: getMark(i, j))),
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: tlabNames(j),
+              content: getDesc(i, j),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Закрыть'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Закрыть диалоговое окно
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -170,6 +242,7 @@ class _GroupListState extends State<GroupList> {
   int len = 0;
 
   void updateData(List<GroupListResponse_Group> newData) {
+    newData.sort((a, b) => a.name.compareTo(b.name));
     setState(() { groupNames = newData; len = newData.length; });
   }
 
@@ -221,6 +294,7 @@ class _CourseListState extends State<CourseList> {
   int len = 0;
 
   void updateData(List<Course> newData) {
+    newData.sort((a, b) => a.courceName.compareTo(b.courceName));
     setState(() { courseNames = newData; len = newData.length; });
   }
 
