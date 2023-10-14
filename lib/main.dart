@@ -166,40 +166,107 @@ class _StudentLabTableState extends State<StudentLabTable> {
     api.getLabsList(LabsListRequest(courceId: cid)).then((p0) => updateLabInfo(p0.labs));
   }
 
-  @override
-  Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(''),
-        ),
-        body: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal, // Горизонтальная прокрутка
-            child: DataTable(
-              columnSpacing: 0.0,
-              columns: List<DataColumn>.generate(labsLen + 1, (index) =>
-                  DataColumn(
+  List<Widget> _buildRow(i) {
+    return List.generate(
+        labsLen,
+          (j) => _buildCell(getMark(i, j+1), color: isOnRevision(i, j+1) ? Colors.yellowAccent : (getMark(i, j+1).data!="" ? Colors.greenAccent : Colors.white))
+    );
+  }
 
-                    label: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.0), // Добавление полей слева и справа
-                      child: tlabNames(index),
-                    ),
+  List<Widget> _buildLabList() {
+    return List.generate(
+      labsLen,
+        (j) => _buildCell(Text(lName(j)))
+    );
+  }
+
+  List<Widget> _buildRows() {
+    return [Row(children:_buildLabList())] + List.generate(
+      studentsLen,
+          (i) => Row(
+        children: _buildRow(i),
+      ),
+    );
+  }
+
+  Widget _buildCell(content, {align = Alignment.center, color = Colors.white}){
+    return Container(
+      alignment: align,
+      width: 120.0,
+      height: 60.0,
+      color: color,
+      margin: EdgeInsets.all(4.0),
+      child: content,
+    );
+  }
+  List<Widget> _buildStudentWidgetList() {
+    return [_buildCell(Text('Студенты'), align: Alignment.centerLeft)] + List.generate(studentsLen, (i) => _buildCell(Text(sName(i)), align: Alignment.centerLeft));
+  }
+
+  Widget flexibleTable() {
+    return Scaffold(
+      appBar: AppBar(),
+      body: SingleChildScrollView(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _buildStudentWidgetList(),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _buildRows(),
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget depTable() {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(''),
+      ),
+      body: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal, // Горизонтальная прокрутка
+          child: DataTable(
+            columnSpacing: 0.0,
+            columns: List<DataColumn>.generate(labsLen + 1, (index) =>
+                DataColumn(
+
+                  label: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.0), // Добавление полей слева и справа
+                    child: tlabNames(index),
                   ),
-              ),
-              border: TableBorder(
-                horizontalInside: BorderSide(),
-                verticalInside: BorderSide(),
-              ),
-              rows: List<DataRow>.generate(studentsLen, (i) =>
-                  DataRow(cells: List<DataCell>.generate(labsLen + 1, (j) {
-                      return j == 0 ? DataCell(Text(sName(i))) : MarkCell(i, j);}
-                      ))
-              ),
+                ),
+            ),
+            border: TableBorder(
+              horizontalInside: BorderSide(),
+              verticalInside: BorderSide(),
+            ),
+            rows: List<DataRow>.generate(studentsLen, (i) =>
+                DataRow(cells: List<DataCell>.generate(labsLen + 1, (j) {
+                  return j == 0 ? DataCell(Text(sName(i))) : MarkCell(i, j);}
+                ))
             ),
           ),
         ),
+      ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+      return flexibleTable();
   }
 
   DataCell MarkCell(int i, int j) {
