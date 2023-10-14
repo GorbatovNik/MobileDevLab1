@@ -57,8 +57,10 @@ class _StudentLabTableState extends State<StudentLabTable> {
   List<LabInfo> labNames = [];
   int labsLen = 0;
 
-  void updateLabRes(int index, List<GroupUserListResponse_Student> studData, List<LabInfo> labInfo,
-      Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> resData, LabByUserResponse p0) {
+  void updateLabRes(int index, List<GroupUserListResponse_Student> studData,
+      List<LabInfo> labInfo,
+      Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> resData,
+      LabByUserResponse p0) {
     log("index " + index.toString());
     for (var j = 0; j < p0.userLab.length; j++) {
       if (resData[studData[index].userId] == null) {
@@ -72,16 +74,22 @@ class _StudentLabTableState extends State<StudentLabTable> {
     }
     if (index + 1 < studData.length) {
       api.getLabByUser(LabByUserRequest(userId: studData[index + 1].userId))
-          .then((p1) => updateLabRes(index + 1, studData, labInfo, resData, p1));
+          .then((p1) =>
+          updateLabRes(index + 1, studData, labInfo, resData, p1));
     }
     else {
-        setState(() { labRes = resData; studentsNames = studData;
-          studentsLen = studData.length; labNames = labInfo;
-        labsLen = labInfo.length; });
+      setState(() {
+        labRes = resData;
+        studentsNames = studData;
+        studentsLen = studData.length;
+        labNames = labInfo;
+        labsLen = labInfo.length;
+      });
     }
   }
 
-  void updateStudents(List<GroupUserListResponse_Student> newData, List<LabInfo> labInfo) {
+  void updateStudents(List<GroupUserListResponse_Student> newData,
+      List<LabInfo> labInfo) {
     Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>> resData =
     Map<$fixnum.Int64, Map<$fixnum.Int64, LabByUserResponse_UserLab>>();
     log("students " + newData.length.toString());
@@ -92,14 +100,19 @@ class _StudentLabTableState extends State<StudentLabTable> {
           .then((p0) => updateLabRes(0, newData, labInfo, resData, p0));
     }
     else {
-      setState(() { labRes = resData; studentsNames = newData;
-      studentsLen = newData.length; labNames = labInfo;
-      labsLen = labInfo.length; });
+      setState(() {
+        labRes = resData;
+        studentsNames = newData;
+        studentsLen = newData.length;
+        labNames = labInfo;
+        labsLen = labInfo.length;
+      });
     }
   }
 
   void updateLabInfo(List<LabInfo> newData) {
-    api.getGroupUserList(GroupUserListRequest(groupId: gid)).then((p0) => updateStudents(p0.students, newData));
+    api.getGroupUserList(GroupUserListRequest(groupId: gid)).then((p0) =>
+        updateStudents(p0.students, newData));
   }
 
   String lName(int index) {
@@ -111,7 +124,8 @@ class _StudentLabTableState extends State<StudentLabTable> {
 
   String sName(int index) {
     if (studentsNames != null)
-      return studentsNames![index].lastName + " " + studentsNames![index].firstName;
+      return studentsNames![index].lastName + " " +
+          studentsNames![index].firstName;
     else
       return "";
   }
@@ -120,12 +134,15 @@ class _StudentLabTableState extends State<StudentLabTable> {
     var studentId = studentsNames[i].userId;
     var labId = labNames[j - 1].labId;
     if (labRes[studentId] != null && labRes[studentId]![labId] != null) {
-        return Text(
-            studentsNames[i].lastName + " " + studentsNames[i].firstName + "\n" +
-            "Баллы: " + labRes[studentId]![labId]!.mark.toString() + "\n" +
-            "OnRevision: "+ labRes[studentId]![labId]!.onRevision.toString() + "\n" +
-            "Время отправки: "+
-            DateTime.fromMillisecondsSinceEpoch(labRes[studentId]![labId]!.sendDate.seconds.toInt() * 1000).toString());
+      return Text(
+          studentsNames[i].lastName + " " + studentsNames[i].firstName + "\n" +
+              "Баллы: " + labRes[studentId]![labId]!.mark.toString() + "\n" +
+              "OnRevision: " +
+              labRes[studentId]![labId]!.onRevision.toString() + "\n" +
+              "Время отправки: " +
+              DateTime.fromMillisecondsSinceEpoch(
+                  labRes[studentId]![labId]!.sendDate.seconds.toInt() * 1000)
+                  .toString());
     }
     return Text("");
   }
@@ -135,6 +152,7 @@ class _StudentLabTableState extends State<StudentLabTable> {
       return Text("Студент");
     return Text(lName(index - 1));
   }
+
   Text getMark(int i, int j) {
     var studentId = studentsNames[i].userId;
     var labId = labNames[j - 1].labId;
@@ -143,6 +161,7 @@ class _StudentLabTableState extends State<StudentLabTable> {
     }
     return Text("");
   }
+
   bool isOnRevision(int i, int j) {
     var studentId = studentsNames[i].userId;
     var labId = labNames[j - 1].labId;
@@ -153,54 +172,85 @@ class _StudentLabTableState extends State<StudentLabTable> {
     return false;
   }
 
-  // Text trowCell(int i, int j) {
-  //   if (j == 0)
-  //     return Text(sName(i));
-  //   return Text(lRes(studentsNames[i].userId, labNames[j - 1].labId));
-  // }
-
   @override
   void initState() {
     super.initState();
 
-    api.getLabsList(LabsListRequest(courceId: cid)).then((p0) => updateLabInfo(p0.labs));
+    api.getLabsList(LabsListRequest(courceId: cid)).then((p0) =>
+        updateLabInfo(p0.labs));
   }
 
   List<Widget> _buildRow(i) {
     return List.generate(
         labsLen,
-          (j) => _buildCell(getMark(i, j+1), color: isOnRevision(i, j+1) ? Colors.yellowAccent : (getMark(i, j+1).data!="" ? Colors.greenAccent : Colors.white))
-    );
+            (j) =>
+            GestureDetector(
+              child: _buildCell(getMark(i, j + 1),
+                  shortWidth: true,
+                  color: isOnRevision(i, j + 1)
+                      ? Colors.yellowAccent
+                      : (getMark(i, j + 1).data != ""
+                      ? Colors.greenAccent
+                      : Colors.white)),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: tlabNames(j + 1),
+                      content: getDesc(i, j + 1),
+                      actions: <Widget>[
+                        TextButton(
+                          child: Text('Закрыть'),
+                          onPressed: () {
+                            Navigator.of(context)
+                                .pop(); // Закрыть диалоговое окно
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ));
   }
 
   List<Widget> _buildLabList() {
     return List.generate(
-      labsLen,
-        (j) => _buildCell(Text(lName(j)))
+        labsLen,
+            (j) => _buildCell(Text(lName(j)), shortWidth: true)
     );
   }
 
   List<Widget> _buildRows() {
-    return [Row(children:_buildLabList())] + List.generate(
+    return [Row(children: _buildLabList())] + List.generate(
       studentsLen,
-          (i) => Row(
-        children: _buildRow(i),
-      ),
+          (i) =>
+          Row(
+            children: _buildRow(i),
+          ),
     );
   }
 
-  Widget _buildCell(content, {align = Alignment.center, color = Colors.white}){
+  Widget _buildCell(content,
+      {align = Alignment.center, color = Colors.white, shortWidth = false}) {
     return Container(
       alignment: align,
-      width: 120.0,
-      height: 60.0,
-      color: color,
-      margin: EdgeInsets.all(4.0),
+      width: shortWidth ? 80 : 120.0,
+      height: 40.0,
+      // color: color,
+      decoration: BoxDecoration(
+          border: Border.all(color: Colors.black38, width: 0.5),
+          color: color
+      ),
       child: content,
     );
   }
+
   List<Widget> _buildStudentWidgetList() {
-    return [_buildCell(Text('Студенты'), align: Alignment.centerLeft)] + List.generate(studentsLen, (i) => _buildCell(Text(sName(i)), align: Alignment.centerLeft));
+    return [_buildCell(Text('Студенты'), align: Alignment.centerLeft)] +
+        List.generate(studentsLen, (i) =>
+            _buildCell(Text(sName(i)), align: Alignment.centerLeft));
   }
 
   Widget flexibleTable() {
@@ -229,73 +279,9 @@ class _StudentLabTableState extends State<StudentLabTable> {
     );
   }
 
-  Widget depTable() {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(''),
-      ),
-      body: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal, // Горизонтальная прокрутка
-          child: DataTable(
-            columnSpacing: 0.0,
-            columns: List<DataColumn>.generate(labsLen + 1, (index) =>
-                DataColumn(
-
-                  label: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.0), // Добавление полей слева и справа
-                    child: tlabNames(index),
-                  ),
-                ),
-            ),
-            border: TableBorder(
-              horizontalInside: BorderSide(),
-              verticalInside: BorderSide(),
-            ),
-            rows: List<DataRow>.generate(studentsLen, (i) =>
-                DataRow(cells: List<DataCell>.generate(labsLen + 1, (j) {
-                  return j == 0 ? DataCell(Text(sName(i))) : MarkCell(i, j);}
-                ))
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-      return flexibleTable();
-  }
-
-  DataCell MarkCell(int i, int j) {
-    return DataCell(
-      SizedBox.expand(
-          child: Container(
-              alignment: Alignment.center,
-              color: isOnRevision(i, j) ? Colors.yellowAccent : (getMark(i, j).data!="" ? Colors.greenAccent : null),
-              child: getMark(i, j))),
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: tlabNames(j),
-              content: getDesc(i, j),
-              actions: <Widget>[
-                TextButton(
-                  child: Text('Закрыть'),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Закрыть диалоговое окно
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+    return flexibleTable();
   }
 }
 
@@ -394,8 +380,6 @@ class _CourseListState extends State<CourseList> {
                     builder: (context) => GroupList(),
                   ),
                 );
-
-
               }
             },
           );
